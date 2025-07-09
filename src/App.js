@@ -8,7 +8,7 @@ function App() {
   const [isDisabled, setIsDisabled] = useState(true);
 
 
-const handleSummarize = () => {
+const handleSummarize = async () => {
   const cleanedStory = story.trim();
 
   if (!cleanedStory) {
@@ -17,30 +17,47 @@ const handleSummarize = () => {
     return;
   }
 
-  
-  let sentences = cleanedStory.match(/[^.!?]+[.!?]/g);
+  setSummary("Summarizing...");
+  setIsDisabled(true);
 
-  if (!sentences || sentences.length === 0) {
-    sentences = cleanedStory.split('.').filter(s => s.trim() !== '');
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "system", content: "You are a helpful assistant that summarizes stories." },
+          { role: "user", content: `Summarize this story in 2-3 sentences:\n\n${cleanedStory}` }
+        ],
+        temperature: 0.7
+      })
+    });
+
+    const data = await response.json();
+    
+    const result = data.choices?.[0]?.message?.content;
+     
+
+    if (result) {
+      setSummary(result);
+      setIsDisabled(false);
+    } else {
+      setSummary("Failed to summarize. Try again.");
+    }
+  } catch (error) {
+    console.error("Error summarizing:", error);
+    setSummary("Error occurred while summarizing.");
   }
-
-  if (sentences.length === 0) {
-    setSummary("Still couldn't find any sentences.");
-    setIsDisabled(true);
-    return;
-  }
-
-  const summarized = sentences.slice(0, 2).join('. ').trim();
-  setSummary(summarized + (summarized.endsWith('.') ? '' : '.'));
-  setIsDisabled(false);
-  setSubmitted(false);
 };
 
 
 
+
   const handleSend = () => {
-    console.log('Story:', story);
-    console.log('Summary:', summary);
     setSubmitted(true);
     setIsDisabled(true); 
     setTimeout(() => {
@@ -69,7 +86,7 @@ const handleSummarize = () => {
       </div>
 
   
-      {summary && !isDisabled && (
+      {summary &&  (
         <div style={{ marginBottom: '10px' }}>
           <strong>Summary:</strong>
           <textarea
