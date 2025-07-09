@@ -8,20 +8,34 @@ function App() {
   const [isDisabled, setIsDisabled] = useState(true);
 
 
-  const handleSummarize = () => {
-  const sentences = story.match(/[^.!?]+[.!?]/g) || [];
+const handleSummarize = () => {
+  const cleanedStory = story.trim();
 
-  if (sentences.length === 0) {
-    setSummary("No clear sentences found.");
-    setIsDisabled(false);
+  if (!cleanedStory) {
+    setSummary("Please write something first.");
+    setIsDisabled(true);
     return;
   }
 
-  const summarized = sentences.slice(0, 2).join(' ').trim();
-  setSummary(summarized);
+  
+  let sentences = cleanedStory.match(/[^.!?]+[.!?]/g);
+
+  if (!sentences || sentences.length === 0) {
+    sentences = cleanedStory.split('.').filter(s => s.trim() !== '');
+  }
+
+  if (sentences.length === 0) {
+    setSummary("Still couldn't find any sentences.");
+    setIsDisabled(true);
+    return;
+  }
+
+  const summarized = sentences.slice(0, 2).join('. ').trim();
+  setSummary(summarized + (summarized.endsWith('.') ? '' : '.'));
   setIsDisabled(false);
   setSubmitted(false);
 };
+
 
 
   const handleSend = () => {
